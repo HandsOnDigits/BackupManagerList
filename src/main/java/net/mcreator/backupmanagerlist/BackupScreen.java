@@ -1,14 +1,12 @@
 package net.mcreator.backupmanagerlist;
 
 import net.minecraft.client.Minecraft;
-
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.toasts.SystemToast;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.ConfirmScreen;
-
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -29,7 +27,6 @@ public class BackupScreen extends Screen {
         this.worldDisplayName = worldDisplayName;
         this.worldFolderId = worldFolderId;
         
-        // Load backups using strictly the folder ID
         this.backups = BackupManager.loadBackups(worldFolderId);
     }
 
@@ -49,12 +46,13 @@ public class BackupScreen extends Screen {
         int listBottom = this.height - 50;
         int listHeight = listBottom - listTop;
 
+        // Pass explicit item height of 30px
         this.backupList = new BackupList(
                 this.minecraft,
                 listWidth,
                 listHeight,
                 listTop,
-                listBottom
+                30
         );
         this.backupList.setX((this.width - listWidth) / 2);
 
@@ -108,7 +106,6 @@ public class BackupScreen extends Screen {
                 0xFFFFFF
         );
 
-        // Display the user-friendly world name in the GUI header
         guiGraphics.drawCenteredString(
                 this.font,
                 Component.literal(this.worldDisplayName),
@@ -119,42 +116,40 @@ public class BackupScreen extends Screen {
     }
 
     private void restoreSelectedBackup() {
-    BackupManager.BackupEntry selected = this.backupList.getSelectedBackup();
-    if (selected == null || this.minecraft == null) {
-        return;
-    }
+        BackupManager.BackupEntry selected = this.backupList.getSelectedBackup();
+        if (selected == null || this.minecraft == null) {
+            return;
+        }
 
-    // Show native warning prompt before purging and restoring
-    this.minecraft.setScreen(new ConfirmScreen(
-            confirmed -> {
-                if (confirmed) {
-                    boolean success = BackupRestorer.restoreBackup(this.worldFolderId, selected.path());
-                    
-                    if (success) {
-                        SystemToast.add(
-                                this.minecraft.getToasts(),
-                                SystemToast.SystemToastId.NARRATOR_TOGGLE, // Uses generic system toast layout
-                                Component.literal("Backup Restored"),
-                                Component.literal("Successfully loaded " + selected.name())
-                        );
-                    } else {
-                        SystemToast.add(
-                                this.minecraft.getToasts(),
-                                SystemToast.SystemToastId.NARRATOR_TOGGLE,
-                                Component.literal("Restore Failed"),
-                                Component.literal("Could not unpack " + selected.name())
-                        );
+        this.minecraft.setScreen(new ConfirmScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        boolean success = BackupRestorer.restoreBackup(this.worldFolderId, selected.path());
+                        
+                        if (success) {
+                            SystemToast.add(
+                                    this.minecraft.getToasts(),
+                                    SystemToast.SystemToastId.NARRATOR_TOGGLE,
+                                    Component.literal("Backup Restored"),
+                                    Component.literal("Successfully loaded §l" + selected.name())
+                            );
+                        } else {
+                            SystemToast.add(
+                                    this.minecraft.getToasts(),
+                                    SystemToast.SystemToastId.NARRATOR_TOGGLE,
+                                    Component.literal("Restore Failed"),
+                                    Component.literal("Could not unpack §l" + selected.name())
+                            );
+                        }
                     }
-                }
-                // Return to backup screen after confirmation or cancellation
-                this.minecraft.setScreen(this);
-            },
-            Component.literal("Restore Backup?"),
-            Component.literal("Are you sure you want to overwrite world folder '" + this.worldFolderId + "' with '" + selected.name() + "'? Current world progress will be lost."),
-            Component.literal("Restore"),
-            Component.literal("Cancel")
-    ));
-}
+                    this.minecraft.setScreen(this);
+                },
+                Component.literal("Restore Backup?"),
+                Component.literal("Are you sure you want to overwrite world folder §l'" + this.worldFolderId + "'§r with §l'" + selected.name() + "'§r?\n Current world progress will be lost."),
+                Component.literal("Restore"),
+                Component.literal("Cancel")
+        ));
+    }
 
     private void selectBackup(BackupManager.BackupEntry backup) {
         this.restoreButton.active = backup != null;
@@ -167,9 +162,9 @@ public class BackupScreen extends Screen {
                 int width,
                 int height,
                 int top,
-                int bottom
+                int itemHeight
         ) {
-            super(minecraft, width, height, top, bottom);
+            super(minecraft, width, height, top, itemHeight);
             for (BackupManager.BackupEntry backup : backups) {
                 this.addEntry(new Entry(backup));
             }
@@ -221,31 +216,32 @@ public class BackupScreen extends Screen {
                     );
                 }
 
-                int textY1 = top + (height / 2) - 12;
-                int textY2 = top + (height / 2) + 2;
-
+                // Line 1 (Top): Date on left, Size on right
+                int line1Y = top + 3;
                 guiGraphics.drawString(
                         font,
                         backup.date(),
                         left + 5,
-                        textY1,
+                        line1Y,
                         0xFFFFFF
-                );
-
-                guiGraphics.drawString(
-                        font,
-                        backup.name(),
-                        left + 5,
-                        textY2,
-                        0xAAAAAA
                 );
 
                 guiGraphics.drawString(
                         font,
                         backup.size(),
                         left + width - font.width(backup.size()) - 5,
-                        textY1,
-                        0xFFFFFF
+                        line1Y,
+                        0x888888
+                );
+
+                // Line 2 (Bottom): Zip filename
+                int line2Y = top + 15;
+                guiGraphics.drawString(
+                        font,
+                        backup.name(),
+                        left + 5,
+                        line2Y,
+                        0xAAAAAA
                 );
             }
 
