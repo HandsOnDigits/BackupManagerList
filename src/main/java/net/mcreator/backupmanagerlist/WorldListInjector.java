@@ -49,7 +49,7 @@ public class WorldListInjector {
                 .ifPresent(worldList -> {
 
                     // Auto-refresh: Sync entry buttons if worlds were created, deleted, or re-loaded
-                    syncButtonsWithList(worldList);
+                    syncButtonsWithList(selectWorldScreen, worldList);
 
                     int listTop = worldList.getY();
                     int listBottom = listTop + worldList.getHeight();
@@ -97,25 +97,23 @@ public class WorldListInjector {
         }
     }
 
-    private static void syncButtonsWithList(WorldSelectionList worldList) {
-        // Clean up entries that were deleted
-        entryButtons.keySet().removeIf(entry -> !worldList.children().contains(entry));
-
-        // Add new entries if a world was added or refreshed
-        for (WorldSelectionList.Entry entry : worldList.children()) {
-            if (entry instanceof WorldSelectionList.WorldListEntry worldEntry && !entryButtons.containsKey(worldEntry)) {
-                LevelSummary summary = extractSummary(worldEntry);
-                String worldName = (summary != null) ? summary.getLevelName() : "Unknown World";
-
-                Button backupBtn = Button.builder(
-                        Component.literal("Backups"),
-                        button -> Minecraft.getInstance().setScreen(new BackupScreen(worldName))
-                ).bounds(0, 0, 50, 16).build();
-
-                entryButtons.put(worldEntry, backupBtn);
-            }
-        }
-    }
+    private static void syncButtonsWithList(SelectWorldScreen selectWorldScreen, WorldSelectionList worldList) {
+	    entryButtons.keySet().removeIf(entry -> !worldList.children().contains(entry));
+	
+	    for (WorldSelectionList.Entry entry : worldList.children()) {
+	        if (entry instanceof WorldSelectionList.WorldListEntry worldEntry && !entryButtons.containsKey(worldEntry)) {
+	            LevelSummary summary = extractSummary(worldEntry);
+	            String worldName = (summary != null) ? summary.getLevelName() : "Unknown World";
+	
+	            Button backupBtn = Button.builder(
+	                    Component.literal("Backups"),
+	                    button -> Minecraft.getInstance().setScreen(new BackupScreen(selectWorldScreen, worldName))
+	            ).bounds(0, 0, 50, 16).build();
+	
+	            entryButtons.put(worldEntry, backupBtn);
+	        }
+	    }
+	}
 
     private static LevelSummary extractSummary(WorldSelectionList.WorldListEntry entry) {
         for (Field field : entry.getClass().getDeclaredFields()) {

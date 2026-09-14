@@ -12,36 +12,37 @@ import java.util.List;
 
 public class BackupScreen extends Screen {
 
+    private final Screen lastScreen;
     private final String worldName;
     private final List<BackupEntry> backups;
 
     private BackupList backupList;
     private Button restoreButton;
 
-    public BackupScreen(String worldName) {
+    public BackupScreen(Screen lastScreen, String worldName) {
         super(Component.literal("Backups - " + worldName));
-
+        this.lastScreen = lastScreen;
         this.worldName = worldName;
         this.backups = createTestBackups();
     }
 
-    private List<BackupEntry> loadBackupsForWorld(String targetWorld) {
-	    List<BackupEntry> result = new ArrayList<>();
-	    // TODO: Scan your backup directory (e.g., /backups/<worldName>/) for .zip files
-		return result;
-	}
+    @Override
+    public void onClose() {
+        // Return to the previous screen (SelectWorldScreen) instead of kicking to main menu
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(this.lastScreen);
+        }
+    }
 
     @Override
     protected void init() {
         super.init();
 
-        // Responsive width (max 500px, or 90% of screen width on smaller resolutions)
         int listWidth = Math.min(500, (int) (this.width * 0.9));
         int listTop = 50;
         int listBottom = this.height - 50;
         int listHeight = listBottom - listTop;
 
-        // Re-initialize selection list with responsive boundaries
         this.backupList = new BackupList(
                 this.minecraft,
                 listWidth,
@@ -49,8 +50,6 @@ public class BackupScreen extends Screen {
                 listTop,
                 listBottom
         );
-        
-        // Align list horizontally center
         this.backupList.setX((this.width - listWidth) / 2);
 
         this.addRenderableWidget(this.backupList);
@@ -92,13 +91,9 @@ public class BackupScreen extends Screen {
             int mouseY,
             float partialTick
     ) {
-        // Draw standard darkened screen background
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-
-        // Render widgets (including selection list and buttons)
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        // Draw overlay title strings over top of background
         guiGraphics.drawCenteredString(
                 this.font,
                 Component.literal("Backups"),
@@ -133,9 +128,6 @@ public class BackupScreen extends Screen {
         result.add(new BackupEntry("September 14, 2026 — 10:30", "backup_2026-09-14_10-30-00.zip", "2.41 GB"));
         result.add(new BackupEntry("September 14, 2026 — 10:00", "backup_2026-09-14_10-00-00.zip", "2.40 GB"));
         result.add(new BackupEntry("September 14, 2026 — 09:30", "backup_2026-09-14_09-30-00.zip", "2.39 GB"));
-        result.add(new BackupEntry("September 14, 2026 — 09:00", "backup_2026-09-14_09-00-00.zip", "2.38 GB"));
-        result.add(new BackupEntry("September 14, 2026 — 08:30", "backup_2026-09-14_08-30-00.zip", "2.37 GB"));
-        result.add(new BackupEntry("September 14, 2026 — 08:00", "backup_2026-09-14_08-00-00.zip", "2.36 GB"));
         return result;
     }
 
@@ -163,7 +155,6 @@ public class BackupScreen extends Screen {
 
         @Override
         public int getRowWidth() {
-            // Match internal entry row width to list container width
             return this.width - 20;
         }
 
@@ -203,7 +194,6 @@ public class BackupScreen extends Screen {
                     );
                 }
 
-                // Vertical centering inside slot height
                 int textY1 = top + (height / 2) - 12;
                 int textY2 = top + (height / 2) + 2;
 
