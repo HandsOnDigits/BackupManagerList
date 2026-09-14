@@ -29,34 +29,40 @@ public class BackupScreen extends Screen {
     protected void init() {
         super.init();
 
-        int listWidth = 500;
-        int listHeight = this.height - 160;
+        // Responsive width (max 500px, or 90% of screen width on smaller resolutions)
+        int listWidth = Math.min(500, (int) (this.width * 0.9));
+        int listTop = 50;
+        int listBottom = this.height - 50;
+        int listHeight = listBottom - listTop;
 
-        int listLeft = (this.width - listWidth) / 2;
-        int listTop = 70;
-
+        // Re-initialize selection list with responsive boundaries
         this.backupList = new BackupList(
                 this.minecraft,
                 listWidth,
                 listHeight,
                 listTop,
-                listTop + listHeight
+                listBottom
         );
+        // Align list horizontally center
+        this.backupList.setX((this.width - listWidth) / 2);
 
         this.addRenderableWidget(this.backupList);
+
+        int buttonY = this.height - 35;
+        int buttonWidth = 100;
+        int buttonSpacing = 10;
 
         this.restoreButton = Button.builder(
                 Component.literal("Restore"),
                 button -> restoreSelectedBackup()
         ).bounds(
-                this.width / 2 - 105,
-                this.height - 60,
-                100,
+                this.width / 2 - buttonWidth - (buttonSpacing / 2),
+                buttonY,
+                buttonWidth,
                 20
         ).build();
 
         this.restoreButton.active = false;
-
         this.addRenderableWidget(this.restoreButton);
 
         this.addRenderableWidget(
@@ -64,9 +70,9 @@ public class BackupScreen extends Screen {
                         Component.literal("Cancel"),
                         button -> this.onClose()
                 ).bounds(
-                        this.width / 2 + 5,
-                        this.height - 60,
-                        100,
+                        this.width / 2 + (buttonSpacing / 2),
+                        buttonY,
+                        buttonWidth,
                         20
                 ).build()
         );
@@ -79,13 +85,18 @@ public class BackupScreen extends Screen {
             int mouseY,
             float partialTick
     ) {
+        // Draw standard darkened screen background
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
+        // Render widgets (including selection list and buttons)
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        // Draw overlay title strings over top of background
         guiGraphics.drawCenteredString(
                 this.font,
                 Component.literal("Backups"),
                 this.width / 2,
-                20,
+                15,
                 0xFFFFFF
         );
 
@@ -93,25 +104,16 @@ public class BackupScreen extends Screen {
                 this.font,
                 Component.literal(this.worldName),
                 this.width / 2,
-                42,
+                30,
                 0xAAAAAA
         );
-
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void restoreSelectedBackup() {
         BackupEntry selected = this.backupList.getSelectedBackup();
-
         if (selected == null) {
             return;
         }
-
-        /*
-         * Restore logic will go here later.
-         *
-         * For now we only have the UI.
-         */
         System.out.println("Selected backup: " + selected.name());
     }
 
@@ -121,173 +123,126 @@ public class BackupScreen extends Screen {
 
     private List<BackupEntry> createTestBackups() {
         List<BackupEntry> result = new ArrayList<>();
-
-        result.add(new BackupEntry(
-                "September 14, 2026 — 10:30",
-                "backup_2026-09-14_10-30-00.zip",
-                "2.41 GB"
-        ));
-
-        result.add(new BackupEntry(
-                "September 14, 2026 — 10:00",
-                "backup_2026-09-14_10-00-00.zip",
-                "2.40 GB"
-        ));
-
-        result.add(new BackupEntry(
-                "September 14, 2026 — 09:30",
-                "backup_2026-09-14_09-30-00.zip",
-                "2.39 GB"
-        ));
-
-        result.add(new BackupEntry(
-                "September 14, 2026 — 09:00",
-                "backup_2026-09-14_09-00-00.zip",
-                "2.38 GB"
-        ));
-
-        result.add(new BackupEntry(
-                "September 14, 2026 — 08:30",
-                "backup_2026-09-14_08-30-00.zip",
-                "2.37 GB"
-        ));
-
-        result.add(new BackupEntry(
-                "September 14, 2026 — 08:00",
-                "backup_2026-09-14_08-00-00.zip",
-                "2.36 GB"
-        ));
-
+        result.add(new BackupEntry("September 14, 2026 — 10:30", "backup_2026-09-14_10-30-00.zip", "2.41 GB"));
+        result.add(new BackupEntry("September 14, 2026 — 10:00", "backup_2026-09-14_10-00-00.zip", "2.40 GB"));
+        result.add(new BackupEntry("September 14, 2026 — 09:30", "backup_2026-09-14_09-30-00.zip", "2.39 GB"));
+        result.add(new BackupEntry("September 14, 2026 — 09:00", "backup_2026-09-14_09-00-00.zip", "2.38 GB"));
+        result.add(new BackupEntry("September 14, 2026 — 08:30", "backup_2026-09-14_08-30-00.zip", "2.37 GB"));
+        result.add(new BackupEntry("September 14, 2026 — 08:00", "backup_2026-09-14_08-00-00.zip", "2.36 GB"));
         return result;
     }
 
-    public record BackupEntry(
-            String date,
-            String name,
-            String size
-    ) {
-    }
+    public record BackupEntry(String date, String name, String size) {}
 
     private class BackupList extends ObjectSelectionList<BackupList.Entry> {
 
-	    public BackupList(
-	            Minecraft minecraft,
-	            int width,
-	            int height,
-	            int top,
-	            int bottom
-	    ) {
-	        super(
-	                minecraft,
-	                width,
-	                height,
-	                top,
-	                bottom
-	        );
-	
-	        for (BackupEntry backup : backups) {
-	            this.addEntry(new Entry(backup));
-	        }
-	    }
-	
-	    public BackupEntry getSelectedBackup() {
-	        Entry selected = this.getSelected();
-	
-	        if (selected == null) {
-	            return null;
-	        }
-	
-	        return selected.backup;
-	    }
-	
-	    @Override
-	    public int getRowWidth() {
-	        return 500;
-	    }
-	
-	    @Override
-	    protected int getScrollbarPosition() {
-	        return this.getX() + this.width - 6;
-	    }
-	
-	    private class Entry
-	            extends ObjectSelectionList.Entry<Entry> {
-	
-	        private final BackupEntry backup;
-	
-	        public Entry(BackupEntry backup) {
-	            this.backup = backup;
-	        }
-	
-	        @Override
-	        public void render(
-	                GuiGraphics guiGraphics,
-	                int index,
-	                int top,
-	                int left,
-	                int width,
-	                int height,
-	                int mouseX,
-	                int mouseY,
-	                boolean hovered,
-	                float partialTick
-	        ) {
-	            if (hovered || BackupList.this.getSelected() == this) {
-	                guiGraphics.fill(
-	                        left,
-	                        top,
-	                        left + width,
-	                        top + height,
-	                        0x803F3F3F
-	                );
-	            }
-	
-	            guiGraphics.drawString(
-	                    font,
-	                    backup.date(),
-	                    left + 10,
-	                    top + 6,
-	                    0xFFFFFF
-	            );
-	
-	            guiGraphics.drawString(
-	                    font,
-	                    backup.name(),
-	                    left + 10,
-	                    top + 22,
-	                    0xAAAAAA
-	            );
-	
-	            guiGraphics.drawString(
-	                    font,
-	                    backup.size(),
-	                    left + width - font.width(backup.size()) - 15,
-	                    top + 6,
-	                    0xFFFFFF
-	            );
-	        }
-	
-	        @Override
-	        public boolean mouseClicked(
-	                double mouseX,
-	                double mouseY,
-	                int button
-	        ) {
-	            if (button == 0) {
-	                BackupList.this.setSelected(this);
-	                selectBackup(this.backup);
-	                return true;
-	            }
-	
-	            return super.mouseClicked(mouseX, mouseY, button);
-	        }
-	
-	        @Override
-	        public Component getNarration() {
-	            return Component.literal(
-	                    backup.date() + ", " + backup.size()
-	            );
-	        }
-	    }
-	}
+        public BackupList(
+                Minecraft minecraft,
+                int width,
+                int height,
+                int top,
+                int bottom
+        ) {
+            super(minecraft, width, height, top, bottom);
+            for (BackupEntry backup : backups) {
+                this.addEntry(new Entry(backup));
+            }
+        }
+
+        public BackupEntry getSelectedBackup() {
+            Entry selected = this.getSelected();
+            return selected != null ? selected.backup : null;
+        }
+
+        @Override
+        public int getRowWidth() {
+            // Match internal entry row width to list container width
+            return this.width - 20;
+        }
+
+        @Override
+        protected int getScrollbarPosition() {
+            return this.getX() + this.width - 6;
+        }
+
+        private class Entry extends ObjectSelectionList.Entry<Entry> {
+
+            private final BackupEntry backup;
+
+            public Entry(BackupEntry backup) {
+                this.backup = backup;
+            }
+
+            @Override
+            public void render(
+                    GuiGraphics guiGraphics,
+                    int index,
+                    int top,
+                    int left,
+                    int width,
+                    int height,
+                    int mouseX,
+                    int mouseY,
+                    boolean hovered,
+                    float partialTick
+            ) {
+                if (hovered || BackupList.this.getSelected() == this) {
+                    guiGraphics.fill(
+                            left,
+                            top,
+                            left + width,
+                            top + height,
+                            0x803F3F3F
+                    );
+                }
+
+                // Vertical centering inside slot height
+                int textY1 = top + (height / 2) - 12;
+                int textY2 = top + (height / 2) + 2;
+
+                guiGraphics.drawString(
+                        font,
+                        backup.date(),
+                        left + 5,
+                        textY1,
+                        0xFFFFFF
+                );
+
+                guiGraphics.drawString(
+                        font,
+                        backup.name(),
+                        left + 5,
+                        textY2,
+                        0xAAAAAA
+                );
+
+                guiGraphics.drawString(
+                        font,
+                        backup.size(),
+                        left + width - font.width(backup.size()) - 5,
+                        textY1,
+                        0xFFFFFF
+                );
+            }
+
+            @Override
+            public boolean mouseClicked(
+                    double mouseX,
+                    double mouseY,
+                    int button
+            ) {
+                if (button == 0) {
+                    BackupList.this.setSelected(this);
+                    selectBackup(this.backup);
+                    return true;
+                }
+                return super.mouseClicked(mouseX, mouseY, button);
+            }
+
+            @Override
+            public Component getNarration() {
+                return Component.literal(backup.date() + ", " + backup.size());
+            }
+        }
+    }
 }
