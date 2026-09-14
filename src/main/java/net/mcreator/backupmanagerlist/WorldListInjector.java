@@ -27,29 +27,8 @@ public class WorldListInjector {
 
     @SubscribeEvent
     public static void onScreenInit(ScreenEvent.Init.Post event) {
-        if (event.getScreen() instanceof SelectWorldScreen selectWorldScreen) {
+        if (event.getScreen() instanceof SelectWorldScreen) {
             entryButtons.clear();
-
-            selectWorldScreen.children().stream()
-                    .filter(WorldSelectionList.class::isInstance)
-                    .map(WorldSelectionList.class::cast)
-                    .findFirst()
-                    .ifPresent(worldList -> {
-                        for (WorldSelectionList.Entry entry : worldList.children()) {
-                            if (entry instanceof WorldSelectionList.WorldListEntry worldEntry) {
-
-                                LevelSummary summary = extractSummary(worldEntry);
-                                String worldName = (summary != null) ? summary.getLevelName() : "Unknown World";
-
-                                Button backupBtn = Button.builder(
-                                        Component.literal("Backups"),
-                                        button -> Minecraft.getInstance().setScreen(new BackupScreen(worldName))
-                                ).bounds(0, 0, 55, 16).build();
-
-                                entryButtons.put(worldEntry, backupBtn);
-                            }
-                        }
-                    });
         }
     }
 
@@ -69,13 +48,18 @@ public class WorldListInjector {
                 .findFirst()
                 .ifPresent(worldList -> {
 
+                    // Auto-refresh: Sync entry buttons if worlds were created, deleted, or re-loaded
+                    syncButtonsWithList(worldList);
+
                     int listTop = worldList.getY();
                     int listBottom = listTop + worldList.getHeight();
                     double scrollAmount = worldList.getScrollAmount();
 
-                    // Fixed: World slot height in Minecraft is 36 pixels
                     int itemHeight = 36;
                     int rowTopOffset = listTop + 4 - (int) scrollAmount;
+
+                    // Dynamically calculate X offset relative to the current right edge
+                    int buttonX = worldList.getX() + worldList.getWidth() - 65;
 
                     for (int i = 0; i < worldList.children().size(); i++) {
                         WorldSelectionList.Entry entry = worldList.children().get(i);
@@ -84,13 +68,8 @@ public class WorldListInjector {
 
                             if (button != null) {
                                 int entryTop = rowTopOffset + (i * itemHeight);
-                                int entryLeft = worldList.getRowLeft();
-                                int entryWidth = worldList.getRowWidth();
-
-                                int buttonX = entryLeft + entryWidth - 60;
                                 int buttonY = entryTop + 10;
 
-                                // Render button only when visible within scroll boundaries
                                 if (buttonY >= listTop && (buttonY + 16) <= listBottom) {
                                     button.setX(buttonX);
                                     button.setY(buttonY);
@@ -114,6 +93,26 @@ public class WorldListInjector {
                     event.setCanceled(true);
                     break;
                 }
+            }
+        }
+    }
+
+    private static void syncButtonsWithList(WorldSelectionList worldList) {
+        // Clean up entries that were deleted
+        entryButtons.keySet().removeIf(entry -> !worldList.children().contains(entry));
+
+        // Add new entries if a world was added or refreshed
+        for (WorldSelectionList.Entry entry : worldList.children()) {
+            if (entry instanceof WorldSelectionList.WorldListEntry worldEntry && !entryButtons.containsKey(worldEntry)) {
+                LevelSummary summary = extractSummary(worldEntry);
+                String worldName = (summary != null) ? summary.getLevelName() : "Unknown World";
+
+                Button backupBtn = Button.builder(
+                        Component.literal("Backups"),
+                        button -> Minecraft.getInstance().setScreen(new BackupScreen(worldName))
+                ).bounds(0, 0, 50, 16).build();
+
+                entryButtons.put(worldEntry, backupBtn);
             }
         }
     }
