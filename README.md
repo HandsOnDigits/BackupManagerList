@@ -40,4 +40,4 @@ At the moment I wirte this, there is no build in backup *wirter* only a *lister 
 ## Compatibility
 
 * **Mod Type:** Client-side only. Does not need to be installed on servers.
-* **Target Environment:** Designed for modern NeoForge/Minecraft versions. (More komming if needed)
+* **Target Environment:** Designed for modern NeoForge/Minecraft versions. (More coming if needed)
