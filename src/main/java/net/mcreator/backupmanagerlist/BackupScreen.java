@@ -19,11 +19,17 @@ public class BackupScreen extends Screen {
     private Button restoreButton;
 
     public BackupScreen(String worldName) {
-        super(Component.literal("Backups"));
+        super(Component.literal("Backups - " + worldName));
 
         this.worldName = worldName;
         this.backups = createTestBackups();
     }
+
+    private List<BackupEntry> loadBackupsForWorld(String targetWorld) {
+	    List<BackupEntry> result = new ArrayList<>();
+	    // TODO: Scan your backup directory (e.g., /backups/<worldName>/) for .zip files
+		return result;
+	}
 
     @Override
     protected void init() {
@@ -43,6 +49,7 @@ public class BackupScreen extends Screen {
                 listTop,
                 listBottom
         );
+        
         // Align list horizontally center
         this.backupList.setX((this.width - listWidth) / 2);
 
