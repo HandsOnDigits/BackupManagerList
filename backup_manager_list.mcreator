@@ -23,6 +23,30 @@
           "src/main/java/net/mcreator/backupmanagerlist/WorldListInjector.java"
         ]
       }
+    },
+    {
+      "name": "BackupManager",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "backup_manager",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/backupmanagerlist/BackupManager.java"
+        ]
+      }
+    },
+    {
+      "name": "BackupConfig",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "backup_config",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/backupmanagerlist/BackupConfig.java"
+        ]
+      }
     }
   ],
   "variable_elements": [],

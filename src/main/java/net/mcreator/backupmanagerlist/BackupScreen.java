@@ -7,28 +7,36 @@ import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class BackupScreen extends Screen {
 
     private final Screen lastScreen;
     private final String worldName;
-    private final List<BackupEntry> backups;
+    private final String worldFolderId;
+    private final List<BackupManager.BackupEntry> backups;
 
     private BackupList backupList;
     private Button restoreButton;
 
-    public BackupScreen(Screen lastScreen, String worldName) {
-        super(Component.literal("Backups - " + worldName));
+    // Updated constructor accepting both worldName and worldFolderId
+    public BackupScreen(Screen lastScreen, String worldName, String worldFolderId) {
+        super(Component.literal("Backups"));
         this.lastScreen = lastScreen;
         this.worldName = worldName;
-        this.backups = createTestBackups();
+        this.worldFolderId = worldFolderId;
+        
+        // Pass both parameters to BackupManager
+        this.backups = BackupManager.loadBackups(worldName, worldFolderId);
+    }
+
+    // Overloaded constructor for backwards compatibility if worldFolderId is not provided
+    public BackupScreen(Screen lastScreen, String worldName) {
+        this(lastScreen, worldName, worldName);
     }
 
     @Override
     public void onClose() {
-        // Return to the previous screen (SelectWorldScreen) instead of kicking to main menu
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.lastScreen);
         }
@@ -112,26 +120,16 @@ public class BackupScreen extends Screen {
     }
 
     private void restoreSelectedBackup() {
-        BackupEntry selected = this.backupList.getSelectedBackup();
+        BackupManager.BackupEntry selected = this.backupList.getSelectedBackup();
         if (selected == null) {
             return;
         }
-        System.out.println("Selected backup: " + selected.name());
+        System.out.println("Restoring backup: " + selected.path().toAbsolutePath());
     }
 
-    private void selectBackup(BackupEntry backup) {
+    private void selectBackup(BackupManager.BackupEntry backup) {
         this.restoreButton.active = backup != null;
     }
-
-    private List<BackupEntry> createTestBackups() {
-        List<BackupEntry> result = new ArrayList<>();
-        result.add(new BackupEntry("September 14, 2026 — 10:30", "backup_2026-09-14_10-30-00.zip", "2.41 GB"));
-        result.add(new BackupEntry("September 14, 2026 — 10:00", "backup_2026-09-14_10-00-00.zip", "2.40 GB"));
-        result.add(new BackupEntry("September 14, 2026 — 09:30", "backup_2026-09-14_09-30-00.zip", "2.39 GB"));
-        return result;
-    }
-
-    public record BackupEntry(String date, String name, String size) {}
 
     private class BackupList extends ObjectSelectionList<BackupList.Entry> {
 
@@ -143,12 +141,12 @@ public class BackupScreen extends Screen {
                 int bottom
         ) {
             super(minecraft, width, height, top, bottom);
-            for (BackupEntry backup : backups) {
+            for (BackupManager.BackupEntry backup : backups) {
                 this.addEntry(new Entry(backup));
             }
         }
 
-        public BackupEntry getSelectedBackup() {
+        public BackupManager.BackupEntry getSelectedBackup() {
             Entry selected = this.getSelected();
             return selected != null ? selected.backup : null;
         }
@@ -165,9 +163,9 @@ public class BackupScreen extends Screen {
 
         private class Entry extends ObjectSelectionList.Entry<Entry> {
 
-            private final BackupEntry backup;
+            private final BackupManager.BackupEntry backup;
 
-            public Entry(BackupEntry backup) {
+            public Entry(BackupManager.BackupEntry backup) {
                 this.backup = backup;
             }
 
