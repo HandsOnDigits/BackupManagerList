@@ -12,27 +12,21 @@ import java.util.List;
 public class BackupScreen extends Screen {
 
     private final Screen lastScreen;
-    private final String worldName;
+    private final String worldDisplayName;
     private final String worldFolderId;
     private final List<BackupManager.BackupEntry> backups;
 
     private BackupList backupList;
     private Button restoreButton;
 
-    // Updated constructor accepting both worldName and worldFolderId
-    public BackupScreen(Screen lastScreen, String worldName, String worldFolderId) {
+    public BackupScreen(Screen lastScreen, String worldDisplayName, String worldFolderId) {
         super(Component.literal("Backups"));
         this.lastScreen = lastScreen;
-        this.worldName = worldName;
+        this.worldDisplayName = worldDisplayName;
         this.worldFolderId = worldFolderId;
         
-        // Pass both parameters to BackupManager
-        this.backups = BackupManager.loadBackups(worldName, worldFolderId);
-    }
-
-    // Overloaded constructor for backwards compatibility if worldFolderId is not provided
-    public BackupScreen(Screen lastScreen, String worldName) {
-        this(lastScreen, worldName, worldName);
+        // Load backups using strictly the folder ID
+        this.backups = BackupManager.loadBackups(worldFolderId);
     }
 
     @Override
@@ -110,9 +104,10 @@ public class BackupScreen extends Screen {
                 0xFFFFFF
         );
 
+        // Display the user-friendly world name in the GUI header
         guiGraphics.drawCenteredString(
                 this.font,
-                Component.literal(this.worldName),
+                Component.literal(this.worldDisplayName),
                 this.width / 2,
                 30,
                 0xAAAAAA
@@ -124,7 +119,7 @@ public class BackupScreen extends Screen {
         if (selected == null) {
             return;
         }
-        System.out.println("Restoring backup: " + selected.path().toAbsolutePath());
+        System.out.println("Restoring backup for folder [" + worldFolderId + "]: " + selected.path().toAbsolutePath());
     }
 
     private void selectBackup(BackupManager.BackupEntry backup) {

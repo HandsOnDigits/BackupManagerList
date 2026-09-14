@@ -49,13 +49,11 @@ public class BackupConfig {
     private static ConfigData createDefaultConfig(File configFile) {
         ConfigData config = new ConfigData();
         
-        // Supported dynamic tokens: {world} (level name) or {world_id} (folder name)
-        config.searchPaths.add("backups/{world}");
+        // Target system folder names using {world_id}
         config.searchPaths.add("backups/{world_id}");
         config.searchPaths.add("backups");
-        config.searchPaths.add("simplebackups/{world}");
         config.searchPaths.add("simplebackups/{world_id}");
-        config.searchPaths.add("ftbbackups/{world}");
+        config.searchPaths.add("ftbbackups/{world_id}");
 
         try (FileWriter writer = new FileWriter(configFile)) {
             GSON.toJson(config, writer);

@@ -27,18 +27,15 @@ public class BackupManager {
             Path path
     ) {}
 
-    public static List<BackupEntry> loadBackups(String worldName, String worldFolderId) {
+    public static List<BackupEntry> loadBackups(String worldFolderId) {
         List<BackupEntry> backups = new ArrayList<>();
 
         File runDir = Minecraft.getInstance().gameDirectory;
         BackupConfig.ConfigData config = BackupConfig.getConfig();
 
         for (String pattern : config.searchPaths) {
-            String resolvedRelativePath = pattern
-                    .replace("{world}", worldName)
-                    .replace("{world_id}", worldFolderId != null ? worldFolderId : worldName);
-
-            Path targetFolder = Paths.get(runDir.getAbsolutePath(), resolvedRelativePath);
+            String resolvedPath = pattern.replace("{world_id}", worldFolderId);
+            Path targetFolder = Paths.get(runDir.getAbsolutePath(), resolvedPath);
 
             if (Files.exists(targetFolder)) {
                 scanFolderForZips(targetFolder, backups);

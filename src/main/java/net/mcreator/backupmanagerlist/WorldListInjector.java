@@ -98,22 +98,27 @@ public class WorldListInjector {
     }
 
     private static void syncButtonsWithList(SelectWorldScreen selectWorldScreen, WorldSelectionList worldList) {
-	    entryButtons.keySet().removeIf(entry -> !worldList.children().contains(entry));
-	
-	    for (WorldSelectionList.Entry entry : worldList.children()) {
-	        if (entry instanceof WorldSelectionList.WorldListEntry worldEntry && !entryButtons.containsKey(worldEntry)) {
-	            LevelSummary summary = extractSummary(worldEntry);
-	            String worldName = (summary != null) ? summary.getLevelName() : "Unknown World";
-	
-	            Button backupBtn = Button.builder(
-	                    Component.literal("Backups"),
-	                    button -> Minecraft.getInstance().setScreen(new BackupScreen(selectWorldScreen, worldName))
-	            ).bounds(0, 0, 50, 16).build();
-	
-	            entryButtons.put(worldEntry, backupBtn);
-	        }
-	    }
-	}
+        entryButtons.keySet().removeIf(entry -> !worldList.children().contains(entry));
+
+        for (WorldSelectionList.Entry entry : worldList.children()) {
+            if (entry instanceof WorldSelectionList.WorldListEntry worldEntry && !entryButtons.containsKey(worldEntry)) {
+                LevelSummary summary = extractSummary(worldEntry);
+                
+                // Extract both human-readable level name and system folder ID
+                String worldDisplayName = (summary != null) ? summary.getLevelName() : "Unknown World";
+                String worldFolderId = (summary != null) ? summary.getLevelId() : worldDisplayName;
+
+                Button backupBtn = Button.builder(
+                        Component.literal("Backups"),
+                        button -> Minecraft.getInstance().setScreen(
+                                new BackupScreen(selectWorldScreen, worldDisplayName, worldFolderId)
+                        )
+                ).bounds(0, 0, 50, 16).build();
+
+                entryButtons.put(worldEntry, backupBtn);
+            }
+        }
+    }
 
     private static LevelSummary extractSummary(WorldSelectionList.WorldListEntry entry) {
         for (Field field : entry.getClass().getDeclaredFields()) {
