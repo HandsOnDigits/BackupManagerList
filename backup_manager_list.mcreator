@@ -13,14 +13,14 @@
       }
     },
     {
-      "name": "UI",
+      "name": "WorldListInjector",
       "type": "code",
       "compiles": true,
       "locked_code": true,
-      "registry_name": "ui",
+      "registry_name": "world_list_injector",
       "metadata": {
         "files": [
-          "src/main/java/net/mcreator/backupmanagerlist/UI.java"
+          "src/main/java/net/mcreator/backupmanagerlist/WorldListInjector.java"
         ]
       }
     }
