@@ -47,6 +47,18 @@
           "src/main/java/net/mcreator/backupmanagerlist/BackupConfig.java"
         ]
       }
+    },
+    {
+      "name": "BackupRestorer",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "backup_restorer",
+      "metadata": {
+        "files": [
+          "src/main/java/net/mcreator/backupmanagerlist/BackupRestorer.java"
+        ]
+      }
     }
   ],
   "variable_elements": [],

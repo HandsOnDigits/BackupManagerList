@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -115,12 +116,31 @@ public class BackupScreen extends Screen {
     }
 
     private void restoreSelectedBackup() {
-        BackupManager.BackupEntry selected = this.backupList.getSelectedBackup();
-        if (selected == null) {
-            return;
-        }
-        System.out.println("Restoring backup for folder [" + worldFolderId + "]: " + selected.path().toAbsolutePath());
+    BackupManager.BackupEntry selected = this.backupList.getSelectedBackup();
+    if (selected == null || this.minecraft == null) {
+        return;
     }
+
+    // Show native warning prompt before purging and restoring
+    this.minecraft.setScreen(new ConfirmScreen(
+            confirmed -> {
+                if (confirmed) {
+                    boolean success = BackupRestorer.restoreBackup(this.worldFolderId, selected.path());
+                    if (success) {
+                        System.out.println("Successfully restored backup: " + selected.name());
+                    } else {
+                        System.err.println("Failed to restore backup: " + selected.name());
+                    }
+                }
+                // Return to backup screen after confirmation or cancellation
+                this.minecraft.setScreen(this);
+            },
+            Component.literal("Restore Backup?"),
+            Component.literal("Are you sure you want to overwrite world folder '" + this.worldFolderId + "' with '" + selected.name() + "'? Current unsaved world progress will be lost."),
+            Component.literal("Restore"),
+            Component.literal("Cancel")
+    ));
+}
 
     private void selectBackup(BackupManager.BackupEntry backup) {
         this.restoreButton.active = backup != null;
