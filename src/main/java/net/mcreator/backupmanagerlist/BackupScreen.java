@@ -1,11 +1,14 @@
 package net.mcreator.backupmanagerlist;
 
 import net.minecraft.client.Minecraft;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.ConfirmScreen;
+
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -126,17 +129,28 @@ public class BackupScreen extends Screen {
             confirmed -> {
                 if (confirmed) {
                     boolean success = BackupRestorer.restoreBackup(this.worldFolderId, selected.path());
+                    
                     if (success) {
-                        System.out.println("Successfully restored backup: " + selected.name());
+                        SystemToast.add(
+                                this.minecraft.getToasts(),
+                                SystemToast.SystemToastId.NARRATOR_TOGGLE, // Uses generic system toast layout
+                                Component.literal("Backup Restored"),
+                                Component.literal("Successfully loaded " + selected.name())
+                        );
                     } else {
-                        System.err.println("Failed to restore backup: " + selected.name());
+                        SystemToast.add(
+                                this.minecraft.getToasts(),
+                                SystemToast.SystemToastId.NARRATOR_TOGGLE,
+                                Component.literal("Restore Failed"),
+                                Component.literal("Could not unpack " + selected.name())
+                        );
                     }
                 }
                 // Return to backup screen after confirmation or cancellation
                 this.minecraft.setScreen(this);
             },
             Component.literal("Restore Backup?"),
-            Component.literal("Are you sure you want to overwrite world folder '" + this.worldFolderId + "' with '" + selected.name() + "'? Current unsaved world progress will be lost."),
+            Component.literal("Are you sure you want to overwrite world folder '" + this.worldFolderId + "' with '" + selected.name() + "'? Current world progress will be lost."),
             Component.literal("Restore"),
             Component.literal("Cancel")
     ));
