@@ -41,3 +41,7 @@ At the moment I wirte this, there is no build in backup *wirter* only a *lister 
 
 * **Mod Type:** Client-side only. Does not need to be installed on servers.
 * **Target Environment:** Designed for modern NeoForge/Minecraft versions. (More coming if needed)
+
+---
+
+Contains AI-Assisted Code. All Art and icons are made by Humans.
