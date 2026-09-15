@@ -4,11 +4,11 @@ license="Apache License version 2.0"
 
 [[mods]]
 modId="backup_manager_list"
-version="0.0.0"
+version="0.0.1"
 displayName="Backup Manager List"
 displayURL="https://mcreator.net"
 credits="Created using mod maker MCreator - https://mcreator.net/about"
-authors="MCreator"
+authors="Sekaus"
 description="Backup Manager List is a client-side utility mod for Minecraft that integrates a backup management interface directly into the singleplayer world selection menu."
 
 # Start of user code block mod configuration

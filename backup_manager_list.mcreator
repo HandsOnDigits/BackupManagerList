@@ -82,10 +82,9 @@
   "workspaceSettings": {
     "modid": "backup_manager_list",
     "modName": "Backup Manager List",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "description": "Backup Manager List is a client-side utility mod for Minecraft that integrates a backup management interface directly into the singleplayer world selection menu.",
-    "author": "MCreator",
-    "websiteURL": "https://mcreator.net",
+    "author": "Sekaus",
     "license": "Apache License version 2.0",
     "serverSideOnly": false,
     "requiredMods": [],

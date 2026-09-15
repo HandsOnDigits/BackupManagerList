@@ -7,29 +7,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.text.DecimalFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class BackupManager {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMMM dd, yyyy — HH:mm");
-
-    public record BackupEntry(
-            String date,
-            String name,
-            String size,
-            Path path
-    ) {}
+    public record BackupEntry(String name, String date, String size, Path path) {}
 
     public static List<BackupEntry> loadBackups(String worldFolderId) {
         List<BackupEntry> backups = new ArrayList<>();
-
         File runDir = Minecraft.getInstance().gameDirectory;
         BackupConfig.ConfigData config = BackupConfig.getConfig();
 
@@ -38,7 +28,7 @@ public class BackupManager {
             Path targetFolder = Paths.get(runDir.getAbsolutePath(), resolvedPath);
 
             if (Files.exists(targetFolder)) {
-                scanFolderForZips(targetFolder, backups);
+                scanFolderForZips(targetFolder, worldFolderId, backups);
             }
         }
 
@@ -47,37 +37,64 @@ public class BackupManager {
         return backups;
     }
 
-    private static void scanFolderForZips(Path folder, List<BackupEntry> backups) {
-        try (Stream<Path> stream = Files.list(folder)) {
+    private static void scanFolderForZips(Path folder, String worldFolderId, List<BackupEntry> backups) {
+        try (var stream = Files.list(folder)) {
             stream.filter(path -> path.toString().endsWith(".zip"))
+                    .filter(path -> isBackupForWorld(path, worldFolderId))
                     .forEach(path -> {
                         if (backups.stream().noneMatch(e -> e.path().equals(path))) {
                             try {
-                                BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+                                File file = path.toFile();
+                                String name = file.getName();
+                                String size = formatFileSize(file.length());
+                                String date = new SimpleDateFormat("yyyy-MM-dd HH:mm")
+                                        .format(new Date(file.lastModified()));
 
-                                LocalDateTime date = LocalDateTime.ofInstant(
-                                        attr.lastModifiedTime().toInstant(),
-                                        ZoneId.systemDefault()
-                                );
-
-                                String formattedDate = date.format(DATE_FORMATTER);
-                                String fileName = path.getFileName().toString();
-                                String fileSize = formatFileSize(attr.size());
-
-                                backups.add(new BackupEntry(formattedDate, fileName, fileSize, path));
-                            } catch (IOException ignored) {
+                                backups.add(new BackupEntry(name, date, size, path));
+                            } catch (Exception ignored) {
                             }
                         }
                     });
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Fixed: Added missing ()
         }
     }
 
+    private static boolean isBackupForWorld(Path zipPath, String worldFolderId) {
+        String fileName = zipPath.getFileName().toString().toLowerCase();
+        String targetWorldId = worldFolderId.toLowerCase();
+
+        // 1. Native MC zip name pattern check: <worldFolderId>-yyyy-MM-dd-HH-mm-ss.zip
+        if (fileName.startsWith(targetWorldId + "-") || fileName.startsWith(targetWorldId + "_") || fileName.equals(targetWorldId + ".zip")) {
+            return true;
+        }
+
+        // 2. Inspect ZIP entries for root level vs nested folder structure
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zipPath))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                String entryName = entry.getName();
+
+                // Nested folder check: e.g., "world_id/level.dat"
+                if (entryName.startsWith(worldFolderId + "/") || entryName.startsWith(worldFolderId + "\\")) {
+                    return true;
+                }
+
+                // Root-level check: level.dat exists directly at root, verify via filename match
+                if (entryName.equals("level.dat")) {
+                    return fileName.contains(targetWorldId);
+                }
+            }
+        } catch (IOException ignored) {
+        }
+
+        return false;
+    }
+
     private static String formatFileSize(long bytes) {
-        if (bytes <= 0) return "0 B";
-        final String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
-        int digitGroups = (int) (Math.log10(bytes) / Math.log10(1024));
-        return new DecimalFormat("#,##0.#").format(bytes / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+        if (bytes < 1024) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        char pre = "KMGTPE".charAt(exp - 1);
+        return String.format("%.1f %cB", bytes / Math.pow(1024, exp), pre);
     }
 }
